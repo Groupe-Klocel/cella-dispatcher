@@ -320,10 +320,11 @@ async def subscription(config: configparser.ConfigParser, token: str) -> None:
             documentToPrint = oneDocument["documentPrintings"]["documentHistory"]
             await manage_printing(config, token, documentToPrint)
         else:
-            logging.info("Force reading of unprinted documents")
-            unprinted_documents = await get_unprinted_documents(config, token)
-            for oneUnprintedDocument in unprinted_documents:
-                await manage_printing(config, token, oneUnprintedDocument)
+            logging.info("Keep alive")
+            # logging.info("Force reading of unprinted documents")
+            # unprinted_documents = await get_unprinted_documents(config, token)
+            # for oneUnprintedDocument in unprinted_documents:
+            #     await manage_printing(config, token, oneUnprintedDocument)
 
     return None
 
@@ -655,7 +656,7 @@ async def get_unprinted_documents(config, token: str) -> List[Any]:
 
 def init_service():
     class CellaDispatcherService:
-        """Silly little application stub"""
+        """Service"""
 
         def stop(self):
             """Stop the service"""
