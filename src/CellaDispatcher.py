@@ -647,6 +647,9 @@ async def get_unprinted_documents(config, token: str) -> List[Any]:
     except Exception as e:
         logging.error(f"Error: {e}")
         await client.close_async()
+        # Let's try to reconnect
+        logging.info("Force re-authentification")
+        token = asyncio.run(authenticate_api(config))
         return []
 
 
