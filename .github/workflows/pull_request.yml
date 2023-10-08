@@ -1,0 +1,12 @@
+name: Pyinstaller Preview
+on:
+  - pull_request
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: PyInstaller Windows
+        uses: gcandau/pyinstaller-action-windows@python3-10-pyinstaller-5-3
+        with:
+          path: src

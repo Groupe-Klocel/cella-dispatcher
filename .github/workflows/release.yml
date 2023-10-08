@@ -1,0 +1,33 @@
+name: Github python package release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  release-on-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: PyInstaller Windows
+        uses: gcandau/pyinstaller-action-windows@python3-10-pyinstaller-5-3
+        with:
+          path: src
+      - uses: actions/upload-artifact@v2
+        with:
+          name: CellaDispatcher
+          path: src/dist/windows
+      - name: create release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            src/dist/windows/*
+            src/CellaDispatcher.ini
+            LICENSE.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GPAT_PACKAGE_TOKEN }}
