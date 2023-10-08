@@ -1,6 +1,6 @@
 # Cella Dispatcher: Streamlining Your Warehouse Operations
 
-Cella Dispatcher is a versatile, cross-platform tool seamlessly integrated with `CELLA WMS`. It empowers you to effortlessly execute warehouse actions, such as automating document printing, directly from your operational hub.
+Cella Dispatcher is a versatile, cross-platform tool seamlessly integrated with [`CELLA WMS`](https://github.com/Groupe-Klocel/cella-frontend). It empowers you to effortlessly execute warehouse actions, such as automating document printing, directly from your operational hub.
 
 ## Getting Started
 
