@@ -454,18 +454,20 @@ async def print_current_document(config, document: Dict[str, Any]):
                         process_without_error = False
 
                     if process_without_error:
-                        printer_handle = win32print.OpenPrinter(printer_name)
+                        # printer_handle = win32print.OpenPrinter(printer_name)
 
                         # Start a print job
-                        win32print.StartDocPrinter(printer_handle, 1, (f"{file_format} Print Job", None, "RAW"))
-                        win32print.StartPagePrinter(printer_handle)
+                        subprocess.run(["SumatraPDF.exe", "-print-to", file_path, "-silent", "-exit-on-print", printer_name])
 
-                        win32print.WritePrinter(printer_handle, bytes)
-
-                        # End the print job
-                        win32print.EndPagePrinter(printer_handle)
-                        win32print.EndDocPrinter(printer_handle)
-                        win32print.ClosePrinter(printer_handle)
+                        # win32print.StartDocPrinter(printer_handle, 1, (f"{file_format} Print Job", None, "RAW"))
+                        # win32print.StartPagePrinter(printer_handle)
+                        #
+                        # win32print.WritePrinter(printer_handle, bytes)
+                        #
+                        # # End the print job
+                        # win32print.EndPagePrinter(printer_handle)
+                        # win32print.EndDocPrinter(printer_handle)
+                        # win32print.ClosePrinter(printer_handle)
 
                         if config["CONFIG"]["Debug"] == "yes":
                             logging.info(f"Document {file_path} sent to printer '{printer_name}'")
