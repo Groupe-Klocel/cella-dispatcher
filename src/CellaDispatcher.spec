@@ -4,7 +4,7 @@
 a = Analysis(
     ['CellaDispatcher.py'],
     pathex=[],
-    binaries=[],
+    binaries=[('SumatraPDF.exe', '.')],
     datas=[],
     hiddenimports=['servicemanager','win32timezone'],
     hookspath=[],
