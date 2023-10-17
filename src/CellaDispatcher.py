@@ -85,13 +85,24 @@ def init_logs(config: configparser.ConfigParser) -> None:
     """
     Initialize log file
     """
-    # set date on filename
-    now = datetime.now()
-    log_extension = ".log"
 
     # check log directory
     if not os.path.isdir(os.path.join(get_cella_directory(), config["CONFIG"]["LogDirectory"])):
         os.makedirs(os.path.join(get_cella_directory(), config["CONFIG"]["LogDirectory"]))
+
+    create_init_log(config)
+
+    logging.info("Start KloDispatcher")
+    if config["CONFIG"]["Debug"] == "yes":
+        logging.info("Debug mode is enabled")
+        requests_logger.setLevel(logging.INFO)
+        websockets_logger.setLevel(logging.INFO)
+
+
+def create_init_log(config: configparser.ConfigParser) -> None:
+    # set date on filename
+    now = datetime.now()
+    log_extension = ".log"
 
     # Remove all handlers associated with the root logger object.
     for handler in logging.root.handlers[:]:
@@ -106,11 +117,6 @@ def init_logs(config: configparser.ConfigParser) -> None:
         datefmt="%H:%M:%S",
         level=logging.DEBUG,
     )
-    logging.info("Start KloDispatcher")
-    if config["CONFIG"]["Debug"] == "yes":
-        logging.info("Debug mode is enabled")
-        requests_logger.setLevel(logging.INFO)
-        websockets_logger.setLevel(logging.INFO)
 
 
 # Function to check if all vars are set
@@ -334,6 +340,8 @@ async def printer_worker_execution(config, token, documentToPrint) -> bool:
     """
     Print document
     """
+    create_init_log(config)
+
     if config["CONFIG"]["Debug"] == "yes":
         logging.info(
             f"{threading.current_thread().name} => Document to print: "
@@ -463,12 +471,12 @@ async def print_current_document(config, document: Dict[str, Any]):
                             printer_handle = win32print.OpenPrinter(printer_name)
 
                             # Start a print job
-                            
+
                             win32print.StartDocPrinter(printer_handle, 1, (f"{file_format} Print Job", None, "RAW"))
                             win32print.StartPagePrinter(printer_handle)
 
                             win32print.WritePrinter(printer_handle, bytes)
-                            
+
                             # End the print job
                             win32print.EndPagePrinter(printer_handle)
                             win32print.EndDocPrinter(printer_handle)
