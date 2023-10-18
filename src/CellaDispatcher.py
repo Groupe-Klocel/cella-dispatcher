@@ -90,7 +90,7 @@ def init_logs(config: configparser.ConfigParser) -> None:
     if not os.path.isdir(os.path.join(get_cella_directory(), config["CONFIG"]["LogDirectory"])):
         os.makedirs(os.path.join(get_cella_directory(), config["CONFIG"]["LogDirectory"]))
 
-    create_init_log(config)
+    create_log_file(config)
 
     logging.info("Start KloDispatcher")
     if config["CONFIG"]["Debug"] == "yes":
@@ -99,7 +99,7 @@ def init_logs(config: configparser.ConfigParser) -> None:
         websockets_logger.setLevel(logging.INFO)
 
 
-def create_init_log(config: configparser.ConfigParser) -> None:
+def create_log_file(config: configparser.ConfigParser) -> None:
     # set date on filename
     now = datetime.now()
     log_extension = ".log"
@@ -340,7 +340,7 @@ async def printer_worker_execution(config, token, documentToPrint) -> bool:
     """
     Print document
     """
-    create_init_log(config)
+    create_log_file(config)
 
     if config["CONFIG"]["Debug"] == "yes":
         logging.info(
