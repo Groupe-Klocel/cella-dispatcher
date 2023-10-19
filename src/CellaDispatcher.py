@@ -81,7 +81,7 @@ def get_cella_dispatcher_config() -> configparser.ConfigParser:
 
 
 # Fonction to init log file or display logs on screen if error occured
-def init_logs(config: configparser.ConfigParser) -> None:
+def init_logs(config: configparser.ConfigParser) -> str:
     """
     Initialize log file
     """
@@ -98,8 +98,17 @@ def init_logs(config: configparser.ConfigParser) -> None:
         requests_logger.setLevel(logging.INFO)
         websockets_logger.setLevel(logging.INFO)
 
+    # store current date
+    now = datetime.now()
+    log_date = f"{now.year}{now.month:02d}{now.day:02d}"
+
+    return log_date
+
 
 def create_log_file(config: configparser.ConfigParser) -> None:
+    """
+    Create new or use existing log file
+    """
     # set date on filename
     now = datetime.now()
     log_extension = ".log"
@@ -117,6 +126,7 @@ def create_log_file(config: configparser.ConfigParser) -> None:
         datefmt="%H:%M:%S",
         level=logging.DEBUG,
     )
+    logging.info("Start new log file")
 
 
 # Function to check if all vars are set
@@ -279,7 +289,7 @@ async def manage_printing(config: configparser.ConfigParser, token: str, documen
 
 
 # Set subscription
-async def subscription(config: configparser.ConfigParser, token: str) -> None:
+async def subscription(config: configparser.ConfigParser, token: str, log_date: str) -> None:
     """
     Core process, subscribe to documentPrintings
     """
@@ -322,6 +332,21 @@ async def subscription(config: configparser.ConfigParser, token: str) -> None:
     }
 
     async for oneDocument in client_ws.subscribe_async(subscription_query, variable_values=subscriptionQueryVariables):
+
+        # check for new log file
+        now = datetime.now()
+        current_date = f"{now.year}{now.month:02d}{now.day:02d}"
+
+        if not current_date == log_date:
+            logging.info("System date changed")
+            # delete old log archives
+            delete_archives(config)
+
+            # create new log file
+            create_log_file(config)
+
+            log_date = current_date
+
         if oneDocument["documentPrintings"]["documentHistory"] is not None:
             documentToPrint = oneDocument["documentPrintings"]["documentHistory"]
             await manage_printing(config, token, documentToPrint)
@@ -340,7 +365,6 @@ async def printer_worker_execution(config, token, documentToPrint) -> bool:
     """
     Print document
     """
-    create_log_file(config)
 
     if config["CONFIG"]["Debug"] == "yes":
         logging.info(
@@ -712,12 +736,9 @@ def init_service():
 
 def main_process():
     config = get_cella_dispatcher_config()
-    resultInitLog = init_logs(config)
+    log_date = init_logs(config)
     if not check_init_config(config):
         sys.exit(1)
-
-    # Delete old log files
-    delete_archives(config)
 
     # We connect to the API
     token = asyncio.run(authenticate_api(config))
@@ -729,7 +750,7 @@ def main_process():
             for oneUnprintedDocument in unprinted_documents:
                 asyncio.run(printer_worker_execution(config, token, oneUnprintedDocument))
 
-            run = asyncio.run(subscription(config, token))
+            run = asyncio.run(subscription(config, token, log_date))
         except Exception as e:
             logging.error("Connection to Cella failed. Wait before trying again.")
             logging.error(f"Error: {e}")
