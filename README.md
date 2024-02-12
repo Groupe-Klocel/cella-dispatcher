@@ -13,6 +13,8 @@ Cella Dispatcher is a versatile, cross-platform tool seamlessly integrated with 
    ```
    This action will create a Windows service aptly named `Cella Dispatcher Service`, which you can manage through the Windows Services application.
 
+Warning for Windows 2019 : If you get a connection issue, you'll need to import the certificate manually (do not hesitate to contact us if needed)
+
 ### For Linux Enthusiasts
 1. **Configuration Setup:** As with the Windows setup, first, configure your username, password, and warehouse ID in the `CellaDispatcher.ini` file.
 2. **Execution:** To kickstart the program, simply run it via Python using the following command:
