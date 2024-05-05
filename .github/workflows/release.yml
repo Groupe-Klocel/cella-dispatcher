@@ -18,6 +18,8 @@ jobs:
         with:
           name: CellaDispatcher
           path: src/dist/windows
+      - name: Zip artifact for deployment
+        run: zip -j src/dist/windows/CellaDispatcher.zip src/dist/windows/*.exe
       - name: create release
         uses: softprops/action-gh-release@v1
         with:
@@ -26,7 +28,7 @@ jobs:
           prerelease: false
           generate_release_notes: true
           files: |
-            src/dist/windows/*
+            src/dist/windows/*.zip
             src/CellaDispatcher.ini
             LICENSE.md
         env:
