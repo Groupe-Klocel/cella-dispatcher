@@ -525,9 +525,11 @@ async def print_current_document(config, document: Dict[str, Any]):
 
                     if process_without_error:
                         if document["documentType"].lower() == "rml" or document["documentType"].lower() == "pdf":
-                            bundle_dir = getattr(sys, '_MEIPASS', os.path.abspath(os.path.dirname(__file__)))
-                            path_to_sumatra = os.path.abspath(os.path.join(bundle_dir,'SumatraPDF.exe'))
-                            print_result = subprocess.run([path_to_sumatra, "-print-to", printer_name, "-silent", "-exit-on-print", file_path])
+                            bundle_dir = getattr(sys, "_MEIPASS", os.path.abspath(os.path.dirname(__file__)))
+                            path_to_sumatra = os.path.abspath(os.path.join(bundle_dir, "SumatraPDF.exe"))
+                            print_result = subprocess.run(
+                                [path_to_sumatra, "-print-to", printer_name, "-silent", "-exit-on-print", file_path]
+                            )
 
                             if print_result.returncode == 1:
                                 raise Exception(f"Exception raised : 'Return code' ({print_result.returncode})")
@@ -640,11 +642,14 @@ async def authenticate_api(config):
         result = await session.execute(query, variable_values=params)
         if result["warehouseLogin"] is None:
             logging.error("Password error")
-            sys.exit(1)
+            raise Exception("Password error")
         token = result["warehouseLogin"]["accessToken"]
     except Exception as e:
         logging.error(f"Cella Access Token cannot be retrieved: {e}")
-        sys.exit(1)
+        # We disconnect the session
+        await client.close_async()
+        await transport.close()
+        raise e
 
     # We disconnect the session
     await client.close_async()
@@ -728,10 +733,7 @@ async def get_unprinted_documents(config, token: str) -> List[Any]:
     except Exception as e:
         logging.error(f"Error: {e}")
         await client.close_async()
-        # Let's try to reconnect
-        logging.info("Force re-authentification")
-        token = asyncio.run(authenticate_api(config))
-        return []
+        raise e
 
 
 def init_service():
@@ -780,13 +782,15 @@ def main_process():
     log_date = init_logs(config)
     if not check_init_config(config):
         sys.exit(1)
-
-    # We connect to the API
-    token = asyncio.run(authenticate_api(config))
+    authenticated = False
 
     # Main loop
     while True:
         try:
+            if not authenticated:
+                # We connect to the API
+                token = asyncio.run(authenticate_api(config))
+                authenticated = True
             unprinted_documents = asyncio.run(get_unprinted_documents(config, token))
             for oneUnprintedDocument in unprinted_documents:
                 asyncio.run(printer_worker_execution(config, token, oneUnprintedDocument))
@@ -796,7 +800,7 @@ def main_process():
             logging.error("Connection to Cella failed. Wait before trying again.")
             logging.error(f"Error: {e}")
             time.sleep(int(config["CONFIG"]["ConnectionFailedWaitBeforeRetry"]))
-            token = asyncio.run(authenticate_api(config))
+            authenticated = False
 
     # We close the connection
     asyncio.run(client.close_async())
