@@ -14,7 +14,7 @@ jobs:
         uses: gcandau/pyinstaller-action-windows@python3-12-pyinstaller-6-6
         with:
           path: src
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: CellaDispatcher
           path: src/dist/windows
