@@ -330,6 +330,7 @@ async def subscription(config: configparser.ConfigParser, token: str, log_date: 
     transport_ws = WebsocketsTransport(
         url=str(config["SERVER"]["ApiEndpointUrl"]).replace("http", "ws"),
         headers={"authorization": "Bearer " + token},
+        connect_args={"max_size": None}
     )
     client_ws = Client(transport=transport_ws, fetch_schema_from_transport=False, execute_timeout=10)
 
