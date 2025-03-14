@@ -21,6 +21,7 @@ import configparser
 import logging
 import os
 import platform
+import ssl
 import subprocess
 import sys
 import threading
@@ -30,6 +31,7 @@ from datetime import datetime, timedelta
 from queue import Queue
 from typing import Any, Dict, List
 
+import certifi
 from gql import Client, gql
 from gql.transport.aiohttp import AIOHTTPTransport
 from gql.transport.aiohttp import log as requests_logger
@@ -52,6 +54,7 @@ printer_threads = {}
 # Default logging level
 requests_logger.setLevel(logging.WARNING)
 websockets_logger.setLevel(logging.WARNING)
+ssl_context = ssl.create_default_context(cafile=certifi.where())
 
 
 def get_cella_directory() -> str:
@@ -331,7 +334,7 @@ async def subscription(config: configparser.ConfigParser, token: str, log_date: 
         url=str(config["SERVER"]["ApiEndpointUrl"]).replace("http", "ws"),
         headers={"authorization": "Bearer " + token},
         connect_args={"max_size": None},
-        ssl=True,
+        ssl=ssl_context,
     )
     client_ws = Client(transport=transport_ws, fetch_schema_from_transport=False, execute_timeout=10)
 
@@ -635,7 +638,7 @@ async def authenticate_api(config):
     warehouse_id = config["SERVER"]["WarehouseId"]
     api_endpoint = config["SERVER"]["ApiEndpointUrl"]
 
-    transport = AIOHTTPTransport(url=api_endpoint, ssl_close_timeout=10, timeout=10, ssl=True)
+    transport = AIOHTTPTransport(url=api_endpoint, ssl_close_timeout=10, timeout=10, ssl=ssl_context)
     client = Client(transport=transport, fetch_schema_from_transport=False, execute_timeout=600)
     session = await client.connect_async(reconnecting=True)
 
@@ -679,7 +682,7 @@ async def connect_api(config, token: str):
     logging.info("Connecting to CELLA")
     api_endpoint = config["SERVER"]["ApiEndpointUrl"]
     transport = AIOHTTPTransport(
-        url=api_endpoint, headers={"authorization": "Bearer " + token}, ssl_close_timeout=10, timeout=10, ssl=True
+        url=api_endpoint, headers={"authorization": "Bearer " + token}, ssl_close_timeout=10, timeout=10, ssl=ssl_context
     )
     client = Client(transport=transport, fetch_schema_from_transport=False, execute_timeout=600)
     session = await client.connect_async(reconnecting=True)
