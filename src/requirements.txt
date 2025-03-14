@@ -1,4 +1,4 @@
-gql[all] == 3.5.0
+gql[all] == 3.5.2
 
 # Only for Windows
 pywin32

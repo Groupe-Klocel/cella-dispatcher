@@ -7,6 +7,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: PyInstaller Windows
-        uses: gcandau/pyinstaller-action-windows@python3-12-pyinstaller-6-6
+        uses: gcandau/pyinstaller-action-windows@python3-12-pyinstaller-6-12
         with:
           path: src
