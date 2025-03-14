@@ -21,6 +21,7 @@ import configparser
 import logging
 import os
 import platform
+import ssl
 import subprocess
 import sys
 import threading
@@ -30,6 +31,7 @@ from datetime import datetime, timedelta
 from queue import Queue
 from typing import Any, Dict, List
 
+import certifi
 from gql import Client, gql
 from gql.transport.aiohttp import AIOHTTPTransport
 from gql.transport.aiohttp import log as requests_logger
@@ -52,6 +54,7 @@ printer_threads = {}
 # Default logging level
 requests_logger.setLevel(logging.WARNING)
 websockets_logger.setLevel(logging.WARNING)
+ssl_context = ssl.create_default_context(cafile=certifi.where())
 
 
 def get_cella_directory() -> str:
@@ -330,7 +333,8 @@ async def subscription(config: configparser.ConfigParser, token: str, log_date: 
     transport_ws = WebsocketsTransport(
         url=str(config["SERVER"]["ApiEndpointUrl"]).replace("http", "ws"),
         headers={"authorization": "Bearer " + token},
-        connect_args={"max_size": None}
+        connect_args={"max_size": None},
+        ssl=ssl_context,
     )
     client_ws = Client(transport=transport_ws, fetch_schema_from_transport=False, execute_timeout=10)
 
@@ -454,8 +458,9 @@ async def print_current_document(config, document: Dict[str, Any]):
 
     # set printer name
     printer_name = document["printerName"]
+    document_type = document["documentType"].lower()
 
-    if document["documentType"].lower() == "rml" or document["documentType"].lower() == "pdf":
+    if document_type == "rml" or document_type == "pdf" or "pdf" in document_type or document_type == "docx":
         # Decode the Base64 string, making sure that
         # it contains only valid characters
         bytes = base64.b64decode(document["binaryDocument"], validate=True)
@@ -470,7 +475,7 @@ async def print_current_document(config, document: Dict[str, Any]):
             process_without_error = False
             logging.error("PDF document not valid")
             raise ValueError("Missing the PDF file signature")
-    elif document["documentType"].lower() == "zpl":
+    elif document_type == "zpl" or document_type == "txt":
         # Decode the Base64 string, making sure that
         # it contains only valid characters
         bytes = base64.b64decode(document["binaryDocument"], validate=True)
@@ -505,11 +510,19 @@ async def print_current_document(config, document: Dict[str, Any]):
                 logging.info("Print on Windows")
             try:
                 if config["CONFIG"]["EnablePrint"] == "yes":
-                    if document["documentType"].lower() == "rml" or document["documentType"].lower() == "pdf":
+                    if (
+                        document_type == "rml"
+                        or document_type == "pdf"
+                        or "pdf" in document_type
+                        or document_type == "docx"
+                    ):
                         file_format = "PDF"
 
-                    elif document["documentType"].lower() == "zpl":
+                    elif document_type == "zpl":
                         file_format = "ZPL"
+
+                    elif document_type == "txt":
+                        file_format = "TXT"
 
                     else:
                         os.rename(
@@ -525,7 +538,8 @@ async def print_current_document(config, document: Dict[str, Any]):
                         process_without_error = False
 
                     if process_without_error:
-                        if document["documentType"].lower() == "rml" or document["documentType"].lower() == "pdf":
+                        if file_format == "PDF":
+                            # Use SumatraPDF to print the PDF file
                             bundle_dir = getattr(sys, "_MEIPASS", os.path.abspath(os.path.dirname(__file__)))
                             path_to_sumatra = os.path.abspath(os.path.join(bundle_dir, "SumatraPDF.exe"))
                             print_result = subprocess.run(
@@ -535,7 +549,7 @@ async def print_current_document(config, document: Dict[str, Any]):
                             if print_result.returncode == 1:
                                 raise Exception(f"Exception raised : 'Return code' ({print_result.returncode})")
 
-                        elif document["documentType"].lower() == "zpl":
+                        elif file_format == "ZPL" or file_format == "TXT":
                             printer_handle = win32print.OpenPrinter(printer_name)
 
                             # Start a print job
@@ -624,7 +638,7 @@ async def authenticate_api(config):
     warehouse_id = config["SERVER"]["WarehouseId"]
     api_endpoint = config["SERVER"]["ApiEndpointUrl"]
 
-    transport = AIOHTTPTransport(url=api_endpoint, ssl_close_timeout=10, timeout=10)
+    transport = AIOHTTPTransport(url=api_endpoint, ssl_close_timeout=10, timeout=10, ssl=ssl_context)
     client = Client(transport=transport, fetch_schema_from_transport=False, execute_timeout=600)
     session = await client.connect_async(reconnecting=True)
 
@@ -668,7 +682,7 @@ async def connect_api(config, token: str):
     logging.info("Connecting to CELLA")
     api_endpoint = config["SERVER"]["ApiEndpointUrl"]
     transport = AIOHTTPTransport(
-        url=api_endpoint, headers={"authorization": "Bearer " + token}, ssl_close_timeout=10, timeout=10
+        url=api_endpoint, headers={"authorization": "Bearer " + token}, ssl_close_timeout=10, timeout=10, ssl=ssl_context
     )
     client = Client(transport=transport, fetch_schema_from_transport=False, execute_timeout=600)
     session = await client.connect_async(reconnecting=True)
