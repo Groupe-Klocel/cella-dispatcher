@@ -303,6 +303,16 @@ async def manage_printing(config: configparser.ConfigParser, token: str, documen
         ].split(","):
             logging.info(f"Printer {documentToPrint['printerName']} is not in the list of authorized printers")
             return True
+        if (
+            "ExcludePrinterList" in config["CONFIG"]
+            and config["CONFIG"]["ExcludePrinterList"] is not None
+            and config["CONFIG"]["ExcludePrinterList"] != ""
+            and documentToPrint["printerName"] in config["CONFIG"]["ExcludePrinterList"].split(",")
+        ):
+            logging.info(
+                f"Printer {documentToPrint['printerName']} is in the list of excluded printers for this process"
+            )
+            return True
         # Search existing printer thread. If not, create new thread
         if not documentToPrint["printerName"] in printer_threads:
             logging.info(f"Start new thread for printer {documentToPrint['printerName']}")
@@ -419,6 +429,14 @@ async def printer_worker_execution(config, token, documentToPrint) -> bool:
         logging.info(
             f"Printer {documentToPrint['printerName']} is not in the list of authorized printers for this process"
         )
+        return True
+    if (
+        "ExcludePrinterList" in config["CONFIG"]
+        and config["CONFIG"]["ExcludePrinterList"] is not None
+        and config["CONFIG"]["ExcludePrinterList"] != ""
+        and documentToPrint["printerName"] in config["CONFIG"]["ExcludePrinterList"].split(",")
+    ):
+        logging.info(f"Printer {documentToPrint['printerName']} is in the list of excluded printers for this process")
         return True
     # Start print process
     if documentToPrint["printerName"] is None or documentToPrint["printerName"] == "":
