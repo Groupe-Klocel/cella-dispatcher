@@ -413,6 +413,13 @@ async def printer_worker_execution(config, token, documentToPrint) -> bool:
             f"{documentToPrint['documentName']}; "
             f"Printer: {documentToPrint['printerName']}"
         )
+    if config["CONFIG"]["PrinterList"] != "*" and documentToPrint["printerName"] not in config["CONFIG"][
+        "PrinterList"
+    ].split(","):
+        logging.info(
+            f"Printer {documentToPrint['printerName']} is not in the list of authorized printers for this process"
+        )
+        return True
     # Start print process
     if documentToPrint["printerName"] is None or documentToPrint["printerName"] == "":
         logging.info(f"Printer name is not set for document {documentToPrint['id']}")
@@ -682,7 +689,11 @@ async def connect_api(config, token: str):
     logging.info("Connecting to CELLA")
     api_endpoint = config["SERVER"]["ApiEndpointUrl"]
     transport = AIOHTTPTransport(
-        url=api_endpoint, headers={"authorization": "Bearer " + token}, ssl_close_timeout=10, timeout=10, ssl=ssl_context
+        url=api_endpoint,
+        headers={"authorization": "Bearer " + token},
+        ssl_close_timeout=10,
+        timeout=10,
+        ssl=ssl_context,
     )
     client = Client(transport=transport, fetch_schema_from_transport=False, execute_timeout=600)
     session = await client.connect_async(reconnecting=True)
