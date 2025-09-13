@@ -36,7 +36,7 @@ from gql import Client, gql
 from gql.transport.aiohttp import AIOHTTPTransport
 from gql.transport.aiohttp import log as requests_logger
 from gql.transport.websockets import WebsocketsTransport
-from gql.transport.websockets import log as websockets_logger
+from gql.transport.websockets_protocol import log as websockets_logger
 
 os_platform = platform.system()
 
@@ -95,7 +95,7 @@ def init_logs(config: configparser.ConfigParser) -> str:
 
     create_log_file(config)
 
-    logging.info("Start KloDispatcher")
+    logging.info("Start CellaDispatcher")
     if config["CONFIG"]["Debug"] == "yes":
         logging.info("Debug mode is enabled")
         requests_logger.setLevel(logging.INFO)
@@ -147,7 +147,7 @@ def check_init_config(config: configparser.ConfigParser) -> bool:
         or config["CONFIG"]["LogRetentionDays"] == ""
         or config["CONFIG"]["TempDirectory"] == ""
     ):
-        logging.error("Config vars are not all set : KloDispatcher is stopped")
+        logging.error("Config vars are not all set : CellaDispatcher is stopped")
         return False
 
     # check number of copies is integer
