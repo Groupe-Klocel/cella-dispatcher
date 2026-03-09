@@ -10,12 +10,7 @@ SRC_DIR = PROJECT_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from cella_dispatcher.models import (
-    DocumentFormat,
-    DocumentJob,
-    UnsupportedDocumentError,
-    decode_document,
-)
+from cella_dispatcher.models import DocumentFormat, DocumentJob, UnsupportedDocumentError, decode_document
 
 
 class DocumentModelTests(unittest.TestCase):

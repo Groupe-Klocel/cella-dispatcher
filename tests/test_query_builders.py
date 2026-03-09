@@ -10,10 +10,7 @@ if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 from cella_dispatcher.config import AppConfig, RuntimeConfig, ServerConfig
-from cella_dispatcher.query_builders import (
-    build_document_subscription_text,
-    build_unprinted_documents_query_text,
-)
+from cella_dispatcher.query_builders import build_document_subscription_text, build_unprinted_documents_query_text
 
 
 def make_config(
