@@ -1,5 +1,6 @@
 gql[all] == 4.0.0
-certifi == 2025.8.3
+certifi == 2026.2.25
 
 # Only for Windows
-pywin32
+pywin32>=308; platform_system == "Windows"
+setuptools<81

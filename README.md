@@ -13,7 +13,7 @@ Cella Dispatcher is a versatile, cross-platform tool seamlessly integrated with 
    ```
    This action will create a Windows service aptly named `Cella Dispatcher Service`, which you can manage through the Windows Services application.
 
-Warning for Windows 2019 : If you get a connection issue, you'll need to import the certificate manually (do not hesitate to contact us if needed)
+Warning for Windows Server 2019: If you encounter TLS/SSL connection errors when Cella Dispatcher connects to CELLA WMS (for example, certificate or trust-related errors), you may need to manually import the relevant server or corporate CA certificate into the Windows certificate store (Local Computer > Trusted Root Certification Authorities). Refer to Microsoft's documentation on managing certificates in MMC, or contact us if you need assistance.
 
 ### For Linux Enthusiasts
 1. **Configuration Setup:** As with the Windows setup, first, configure your username, password, and warehouse ID in the `CellaDispatcher.ini` file.

@@ -10,6 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile sources
+        run: python -m compileall src
+      - name: Unit tests
+        run: python -m unittest discover -s tests
       - name: PyInstaller Windows
         uses: gcandau/pyinstaller-action-windows@python3-12-pyinstaller-6-12
         with:
