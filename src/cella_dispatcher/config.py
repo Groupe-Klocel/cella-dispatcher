@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import configparser
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+
+from .sumatra import normalize_print_settings
 
 
 class ConfigError(RuntimeError):
@@ -11,6 +13,11 @@ class ConfigError(RuntimeError):
 
 TRUE_VALUES = {"1", "true", "yes", "on"}
 FALSE_VALUES = {"0", "false", "no", "off"}
+
+# Optional INI section holding the SumatraPDF "-print-settings" used for PDF documents, per printer.
+PRINT_SETTINGS_SECTION = "PRINT_SETTINGS"
+# Key of that section applying to every printer without a line of its own.
+DEFAULT_PRINTER_KEY = "*"
 
 
 @dataclass(slots=True, frozen=True)
@@ -41,6 +48,10 @@ class RuntimeConfig:
     force_read_delay: int
     printer_allow_list: frozenset[str] | None
     printer_exclude_list: frozenset[str]
+    # SumatraPDF -print-settings for PDF documents: the default value and the per printer overrides
+    # (keys are printer names in lower case, Windows printer names being case insensitive).
+    pdf_print_settings: str = ""
+    pdf_print_settings_by_printer: dict[str, str] = field(default_factory=dict)
 
     @property
     def error_directory(self) -> Path:
@@ -67,6 +78,7 @@ class AppConfig:
             if not parser.has_section(section_name):
                 raise ConfigError(f"Missing [{section_name}] section in {config_path.name}")
 
+        default_print_settings, print_settings_by_printer = _parse_print_settings(parser)
         server = ServerConfig(
             api_endpoint_url=_require_value(parser, "SERVER", "ApiEndpointUrl"),
             warehouse_login=_require_value(parser, "SERVER", "WarehouseLogin"),
@@ -91,6 +103,8 @@ class AppConfig:
             printer_allow_list=_parse_printer_list(parser.get("CONFIG", "PrinterList", fallback="*")),
             printer_exclude_list=_parse_printer_list(parser.get("CONFIG", "ExcludePrinterList", fallback=""))
             or frozenset(),
+            pdf_print_settings=default_print_settings,
+            pdf_print_settings_by_printer=print_settings_by_printer,
         )
         config = cls(config_path=config_path, server=server, runtime=runtime)
         config.ensure_directories()
@@ -108,6 +122,15 @@ class AppConfig:
         if normalized_name in self.runtime.printer_exclude_list:
             return False
         return True
+
+    def pdf_print_settings_for(self, printer_name: str | None) -> str:
+        """Return the SumatraPDF -print-settings to use for PDF documents sent to ``printer_name``.
+
+        A printer with its own line in [PRINT_SETTINGS] uses that line, even when it is empty; every
+        other printer uses the "*" default, which is empty (SumatraPDF defaults) when not configured.
+        """
+        normalized_name = (printer_name or "").strip().lower()
+        return self.runtime.pdf_print_settings_by_printer.get(normalized_name, self.runtime.pdf_print_settings)
 
 
 def _require_value(parser: configparser.ConfigParser, section: str, option: str) -> str:
@@ -150,6 +173,22 @@ def _parse_int(
             f"Value for [{section}] {option} must be greater than or equal to {minimum}, got {value}",
         )
     return value
+
+
+def _parse_print_settings(parser: configparser.ConfigParser) -> tuple[str, dict[str, str]]:
+    """Read the optional [PRINT_SETTINGS] section: the "*" default and the per printer overrides."""
+    if not parser.has_section(PRINT_SETTINGS_SECTION):
+        return "", {}
+    default_settings = ""
+    settings_by_printer: dict[str, str] = {}
+    for printer_name, raw_value in parser.items(PRINT_SETTINGS_SECTION):
+        settings = normalize_print_settings(raw_value)
+        normalized_name = printer_name.strip()
+        if normalized_name == DEFAULT_PRINTER_KEY:
+            default_settings = settings
+        elif normalized_name:
+            settings_by_printer[normalized_name.lower()] = settings
+    return default_settings, settings_by_printer
 
 
 def _parse_printer_list(raw_value: str) -> frozenset[str] | None:

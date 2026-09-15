@@ -13,6 +13,7 @@ from pathlib import Path
 from .api import CellaApi
 from .config import AppConfig
 from .models import DocumentFormat, DocumentJob, decode_document
+from .sumatra import build_print_command
 
 OS_PLATFORM = platform.system().lower()
 BUNDLE_DIR = getattr(sys, "_MEIPASS", os.path.abspath(os.path.dirname(__file__)))
@@ -79,18 +80,15 @@ class DocumentPrinter:
         if decoded_document.format is DocumentFormat.PDF:
             if not self.sumatra_path.is_file():
                 raise PrintingError(f"SumatraPDF executable not found at {self.sumatra_path}")
+            # Without settings SumatraPDF shrinks the page to the paper and turns any page wider than
+            # tall by 90 degrees: right for an A4 landscape report, wrong for a label designed wider
+            # than tall. [PRINT_SETTINGS] in the INI file tunes this per printer (disable-auto-rotation).
+            print_settings = self._config.pdf_print_settings_for(job.printer_name)
+            if print_settings:
+                logging.info("Printing document %s with SumatraPDF settings %s", job.id, print_settings)
+            command = build_print_command(self.sumatra_path, job.printer_name, temp_file_path, print_settings)
             for _ in range(self._config.runtime.number_of_copies):
-                subprocess.run(
-                    [
-                        str(self.sumatra_path),
-                        "-print-to",
-                        job.printer_name or "",
-                        "-silent",
-                        "-exit-on-print",
-                        str(temp_file_path),
-                    ],
-                    check=True,
-                )
+                subprocess.run(command, check=True)
             return
 
         if decoded_document.format is not DocumentFormat.RAW:
