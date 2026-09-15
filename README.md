@@ -22,6 +22,26 @@ Warning for Windows Server 2019: If you encounter TLS/SSL connection errors when
    python3 CellaDispatcher.py
    ```
 
+## Printing PDF documents on Windows
+
+PDF documents are printed with the bundled [SumatraPDF](https://www.sumatrapdfreader.org) (`src/SumatraPDF.exe`). Without settings, SumatraPDF shrinks the page to the paper and **turns any page wider than tall by 90 degrees** to match a printer configured in portrait mode. This is right for an A4 landscape report, but wrong for a label designed wider than tall (a 51 x 31 mm barcode label, a 6 x 4 inch location label): the label comes out sideways and reduced.
+
+The optional `[PRINT_SETTINGS]` section of `CellaDispatcher.ini` forwards SumatraPDF `-print-settings` per printer:
+
+```ini
+[PRINT_SETTINGS]
+; default for every printer without a line of its own, empty keeps the SumatraPDF defaults
+*=
+; label printers: never turn the page
+ZEBRA39=disable-auto-rotation
+Returns printer=disable-auto-rotation,noscale
+```
+
+- Keys are the printer names sent by CELLA (case insensitive); `*` applies to every printer without a line of its own. A printer with an empty line keeps the SumatraPDF defaults even when `*` is set.
+- Several settings are separated by commas. Useful values: `disable-auto-rotation`, `noscale`, `shrink` (default), `fit`, `portrait`, `landscape`, `paper=<name>`, `bin=<name>`, `color`, `monochrome`, `duplex`, `simplex`. Unknown values are ignored by SumatraPDF.
+- `disable-auto-rotation` needs SumatraPDF 3.5.2 or newer: older versions (such as 3.4.6) silently ignore it and keep turning the page. Check the version of the bundled `src/SumatraPDF.exe` before relying on it.
+- ZPL documents are sent raw to the printer and are not affected. Printing on Linux goes through CUPS and is not affected either.
+
 ## License
 Cella dispatcher is released under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version (GPL-3+).
 

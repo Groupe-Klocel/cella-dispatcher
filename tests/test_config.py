@@ -54,6 +54,51 @@ class AppConfigTests(unittest.TestCase):
             self.assertTrue(config.runtime.log_directory.is_dir())
             self.assertTrue(config.runtime.temp_directory.is_dir())
             self.assertTrue(config.runtime.error_directory.is_dir())
+            # No [PRINT_SETTINGS] section: PDF documents keep the SumatraPDF defaults on every printer
+            self.assertEqual(config.runtime.pdf_print_settings, "")
+            self.assertEqual(config.runtime.pdf_print_settings_by_printer, {})
+            self.assertEqual(config.pdf_print_settings_for("Printer A"), "")
+
+    def test_load_reads_pdf_print_settings_per_printer(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base_dir = Path(tmpdir)
+            (base_dir / "CellaDispatcher.ini").write_text(
+                textwrap.dedent(
+                    """
+                    [SERVER]
+                    ApiEndpointUrl=https://api.example.com/graphql
+                    WarehouseLogin=warehouse
+                    WarehousePassword=secret
+                    WarehouseId=my-warehouse
+
+                    [CONFIG]
+                    TempDirectory=tmp
+
+                    [PRINT_SETTINGS]
+                    ; every printer without a line of its own
+                    *=shrink
+                    ZEBRA39 = disable-auto-rotation, noscale ,
+                    Label Printer=disable-auto-rotation
+                    Office Printer=
+                    """,
+                ).strip(),
+                encoding="utf-8",
+            )
+
+            config = AppConfig.load(base_dir)
+
+            self.assertEqual(config.runtime.pdf_print_settings, "shrink")
+            self.assertEqual(
+                config.runtime.pdf_print_settings_by_printer,
+                {"zebra39": "disable-auto-rotation,noscale", "label printer": "disable-auto-rotation", "office printer": ""},
+            )
+            # Printer names are matched case insensitively, blanks and empty items are cleaned up
+            self.assertEqual(config.pdf_print_settings_for("zebra39"), "disable-auto-rotation,noscale")
+            self.assertEqual(config.pdf_print_settings_for(" Label Printer "), "disable-auto-rotation")
+            # An explicit empty line overrides the "*" default, an unknown printer gets the default
+            self.assertEqual(config.pdf_print_settings_for("Office Printer"), "")
+            self.assertEqual(config.pdf_print_settings_for("Other Printer"), "shrink")
+            self.assertEqual(config.pdf_print_settings_for(None), "shrink")
 
     def test_load_rejects_missing_required_values(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
