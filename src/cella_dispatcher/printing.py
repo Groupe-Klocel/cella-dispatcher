@@ -85,7 +85,7 @@ class DocumentPrinter:
             # than tall. [PRINT_SETTINGS] in the INI file tunes this per printer (disable-auto-rotation).
             print_settings = self._config.pdf_print_settings_for(job.printer_name)
             if print_settings:
-                logging.info("Document %s printed with SumatraPDF settings %s", job.id, print_settings)
+                logging.info("Printing document %s with SumatraPDF settings %s", job.id, print_settings)
             command = build_print_command(self.sumatra_path, job.printer_name, temp_file_path, print_settings)
             for _ in range(self._config.runtime.number_of_copies):
                 subprocess.run(command, check=True)

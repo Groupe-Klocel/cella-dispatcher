@@ -24,11 +24,15 @@ class SumatraPrintCommandTests(unittest.TestCase):
         )
 
     def test_build_print_command_without_settings_keeps_the_historical_command(self) -> None:
-        command = build_print_command(Path("C:/dispatcher/SumatraPDF.exe"), "ZEBRA39", Path("C:/temp/1_abc.pdf"))
+        sumatra_path = Path("C:/dispatcher/SumatraPDF.exe")
+        document_path = Path("C:/temp/1_abc.pdf")
 
+        command = build_print_command(sumatra_path, "ZEBRA39", document_path)
+
+        # Paths are stringified by the builder, so the expected values follow the platform separators
         self.assertEqual(
             command,
-            ["C:/dispatcher/SumatraPDF.exe", "-print-to", "ZEBRA39", "-silent", "-exit-on-print", "C:/temp/1_abc.pdf"],
+            [str(sumatra_path), "-print-to", "ZEBRA39", "-silent", "-exit-on-print", str(document_path)],
         )
 
     def test_build_print_command_forwards_print_settings(self) -> None:

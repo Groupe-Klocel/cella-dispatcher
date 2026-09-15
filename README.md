@@ -39,7 +39,7 @@ Returns printer=disable-auto-rotation,noscale
 
 - Keys are the printer names sent by CELLA (case insensitive); `*` applies to every printer without a line of its own. A printer with an empty line keeps the SumatraPDF defaults even when `*` is set.
 - Several settings are separated by commas. Useful values: `disable-auto-rotation`, `noscale`, `shrink` (default), `fit`, `portrait`, `landscape`, `paper=<name>`, `bin=<name>`, `color`, `monochrome`, `duplex`, `simplex`. Unknown values are ignored by SumatraPDF.
-- `disable-auto-rotation` needs SumatraPDF 3.5.2 or newer: older versions (such as 3.4.6) silently ignore it and keep turning the page. Check the version of the bundled `src/SumatraPDF.exe` before relying on it.
+- `disable-auto-rotation` needs SumatraPDF 3.5 or newer: older versions (such as 3.4.6) silently ignore it and keep turning the page. The bundled `src/SumatraPDF.exe` is version 3.6.1.
 - ZPL documents are sent raw to the printer and are not affected. Printing on Linux goes through CUPS and is not affected either.
 
 ## License
